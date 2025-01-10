@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 import torch
 import math
+import os
+import inspect
 import torch.nn as nn
 from torch.nn import functional as F
+import numpy as np
+from hellaswag import render_example, iterate_examples
 
 class CausalSelfAttention(nn.Module):
 
@@ -182,6 +186,12 @@ class GPT(nn.Module):
 # -----------------------------------------------------------------------------
 import tiktoken
 import time
+
+def load_tokens(filename):
+    npt = np.load(filename)
+    npt = npt.astype(np.int32) # added after video
+    ptt = torch.tensor(npt, dtype=torch.long)
+    return ptt
 
 class DataLoaderLite:
     def __init__(self, B, T, process_rank, num_processes, split):
