@@ -62,11 +62,11 @@ class Block(nn.Module):
 
 @dataclass
 class GPTConfig:
-    block_size: int = 256
-    vocab_size: int = 65
-    n_layer: int = 6
-    n_head: int = 6
-    n_embd: int = 384
+    block_size: int = 1024
+    vocab_size: int = 50257
+    n_layer: int = 12
+    n_head: int = 12
+    n_embd: int = 768
 
 class GPT(nn.Module):
 
@@ -142,8 +142,12 @@ class GPT(nn.Module):
 
 
 
-
 device = "cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    device = "mps"
+print("using device: %s" % device) 
 
 import tiktoken
 enc = tiktoken.get_encoding('gpt2')
@@ -153,28 +157,20 @@ text = text[:1000]
 tokens = enc.encode(text)
 B, T = 4, 32
 buf = torch.tensor(tokens[:B*T + 1])
+buf = buf.to(device)
 x = buf[:-1].view(B, T)
 y = buf[1:].view(B, T)
-print(x.size(), y.size())
 model = GPT(GPTConfig())
 model.to(device)
+
+optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
+for i in range(50):
+    optimizer.zero_grad()
+    logits, loss = model(x, y)
+    loss.backward()
+    optimizer.step()
+    print(f"step:{i}, loss:{loss.item()}")
+
 logits, loss = model(x, y)
 print(loss)
 
-# torch.manual_seed(42)
-# torch.cuda.manual_seed(42)
-# while x.size(1) < max_length:
-#     with torch.no_grad():
-#         logits, _ = model(x)
-#         logits = logits[:, -1, :]
-#         probs = F.softmax(logits, dim=-1)
-#         topk_probs, topk_indices = torch.topk(probs, 5, dim=-1)
-#         ix = torch.multinomial(topk_probs, 1)
-#         xcol = torch.gather(topk_indices, -1, ix)
-#         x = torch.cat((x, xcol), 1)
-
-# for i in range(num_return_sequences):
-#     tokens = x[i, :max_length].tolist()
-#     decoded = enc.decode(tokens)
-#     print(">", decoded)
-    
