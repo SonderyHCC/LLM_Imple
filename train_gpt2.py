@@ -199,18 +199,22 @@ train_loader = DataLoaderLite(B=6, T=1024)
 
 torch.set_float32_matmul_precision('high')
 
-model = GPT(GPTConfig())
+model = GPT(GPTConfig(vocab_size=50304))
 model.to(device)
 model = torch.compile(model)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 for i in range(50):
+    t0 = time.time()
     x , y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
     logits, loss = model(x, y)
     loss.backward()
     optimizer.step()
+    torch.cuda.synchronize()
+    t1 = time.time()
+    dt = t1 - t0
     print(f"step:{i}, loss:{loss.item()}")
 
 logits, loss = model(x, y)
