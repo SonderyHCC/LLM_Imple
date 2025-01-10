@@ -155,6 +155,7 @@ class GPT(nn.Module):
 
 # -----------------------------------------------------------------------------
 import tiktoken
+import time
 
 class DataLoaderLite:
     def __init__(self, B, T):
@@ -191,7 +192,9 @@ elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 print("using device: %s" % device) 
 
-train_loader = DataLoaderLite(B=4, T=32)
+train_loader = DataLoaderLite(B=6, T=1024)
+
+torch.set_float32_matmul_precision('high')
 
 model = GPT(GPTConfig())
 model.to(device)
