@@ -218,6 +218,16 @@ elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 print("using device: %s" % device) 
 
+total_batch_size = 524288 # 2**19, ~0.5M, in number of tokens
+B = 64 # micro batch size
+T = 1024 # sequence length
+assert total_batch_size % (B * T * ddp_world_size) == 0, "make sure total_batch_size is divisible by B * T * ddp_world_size"
+grad_accum_steps = total_batch_size // (B * T * ddp_world_size)
+if master_process:
+    print(f"total desired batch size: {total_batch_size}")
+    print(f"=> calculated gradient accumulation steps: {grad_accum_steps}")
+
+
 train_loader = DataLoaderLite(B=6, T=1024)
 
 torch.set_float32_matmul_precision('high')
